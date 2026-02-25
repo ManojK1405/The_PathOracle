@@ -61,7 +61,14 @@ def get_model():
     if model is None:
         if os.path.exists(MODEL_PATH) and tf:
             try:
-                model = load_model(MODEL_PATH)
+                # Handle Keras version differences (batch_shape vs batch_input_shape)
+                class CustomInputLayer(tf.keras.layers.InputLayer):
+                    def __init__(self, **kwargs):
+                        if 'batch_shape' in kwargs:
+                            kwargs['batch_input_shape'] = kwargs.pop('batch_shape')
+                        super().__init__(**kwargs)
+                
+                model = load_model(MODEL_PATH, custom_objects={'InputLayer': CustomInputLayer})
                 print("Model loaded successfully.")
                 model_error = None
             except Exception as e:

@@ -54,15 +54,22 @@ ADV_MODELS = {'yolo': None, 'ocr': None, 'seg': None}
 
 def get_model():
     global model
+    global model_error
+    if 'model_error' not in globals():
+        model_error = None
+        
     if model is None:
         if os.path.exists(MODEL_PATH) and tf:
             try:
                 model = load_model(MODEL_PATH)
                 print("Model loaded successfully.")
+                model_error = None
             except Exception as e:
+                model_error = str(e)
                 print(f"Error loading model: {e}")
         else:
-            print("Model file not found. Please train the model first.")
+            model_error = "Model file not found or TensorFlow not imported."
+            print(model_error)
     return model
 
 def get_yolo():
@@ -224,7 +231,9 @@ def predict():
                     'prediction': predictions[0]['label'],
                     'confidence': predictions[0]['confidence'],
                     'original': predictions[0]['original'],
-                    'advanced': advanced_results
+                    'advanced': advanced_results,
+                    'model_type': 'Oracle Simulator',
+                    'error': globals().get('model_error', 'Unknown error')
                 })
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)})

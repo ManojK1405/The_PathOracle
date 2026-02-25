@@ -1,6 +1,6 @@
-# RoadSign AI - Traffic Sign Recognition
+# PathOracle - The AI Visionary of the Highway
 
-A Deep Learning project using Convolutional Neural Networks (CNN) to classify German Road Signs into 43 different classes.
+A Deep Learning suite using multi-model neural networks into classify traffic signs, parse scene segmentation, and perform live OCR analysis.
 
 ## Features
 - **Modern Web Interface**: Upload and classify signs instantly.

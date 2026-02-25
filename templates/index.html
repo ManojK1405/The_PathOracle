@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadSign AI - Precision Traffic Sign Recognition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.5);
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.light-theme {
+            --bg: #f3f4f6;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #111827;
+            --text-dim: #4b5563;
+            --glass: rgba(255, 255, 255, 0.6);
+            --border: rgba(0, 0, 0, 0.08);
+            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            transition: background-color var(--transition), color var(--transition);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 40%);
+        }
+
+        body.light-theme {
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
+        }
+
+        header {
+            padding: 2rem;
+            text-align: center;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .upload-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: var(--shadow, 0 25px 50px -12px rgba(0, 0, 0, 0.5));
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -12px rgba(99, 102, 241, 0.2);
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: var(--primary);
+            background: var(--glass);
+        }
+
+        .drop-zone svg {
+            width: 64px;
+            height: 64px;
+            stroke: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 15px -3px var(--primary-glow);
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 25px -5px var(--primary-glow);
+        }
+
+        #preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            display: none;
+            margin-top: 1rem;
+            object-fit: contain;
+        }
+
+        .results {
+            margin-top: 3rem;
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .prediction-label {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #818cf8;
+        }
+
+        .confidence-bar-container {
+            height: 8px;
+            background: var(--glass);
+            border-radius: 4px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .confidence-bar {
+            height: 100%;
+            background: linear-gradient(to right, #6366f1, #c084fc);
+            width: 0%;
+            transition: width 1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+        }
+
+        .settings-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .select-input {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .icon-btn {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn.active {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+        }
+
+        .driving-tip {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-style: italic;
+            color: #fbbf24;
+            font-size: 0.9rem;
+        }
+
+        .breakdown-container {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .breakdown-item {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .breakdown-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .breakdown-label {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .breakdown-percent {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .breakdown-bar-bg {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .breakdown-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+            transition: width 0.8s ease-out;
+        }
+
+        /* --- Panel Adjustments --- */
+        body.light-theme .advanced-panel,
+        body.light-theme .upload-container,
+        body.light-theme .result-card {
+            background: var(--card-bg);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(20px);
+        }
+
+        body.light-theme .feature-toggle {
+            background: #ffffff;
+            border-color: rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-theme .feature-toggle.active {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+        }
+
+        body.light-theme .feature-toggle.active .toggle-label {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        body.light-theme .select-input,
+        body.light-theme .icon-btn {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        body.light-theme .icon-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        body.light-theme .breakdown-bar-bg {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* --- Advanced Features UI --- */
+        .advanced-panel {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .pro-badge {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+        }
+
+        .feature-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--glass);
+            padding: 0.8rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .feature-toggle:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .feature-toggle.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .toggle-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+
+        .feature-toggle.active .toggle-label {
+            color: white;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .status-health {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+        }
+
+        .status-ocr {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            border: 1px solid #818cf8;
+        }
+
+        #advancedResults {
+            display: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .advanced-img-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .advanced-img-item {
+            text-align: center;
+        }
+
+        .advanced-img-item p {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .advanced-img-item img {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .ocr-text {
+            background: black;
+            color: #10b981;
+            font-family: monospace;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            border: 1px solid #10b981;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+
+        .tab {
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        #cameraView {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        video {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: black;
+            transform: scaleX(-1);
+        }
+
+        .camera-controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid var(--glass);
+            border-bottom-color: var(--primary);
+            border-radius: 50%;
+            display: none;
+            margin: 2rem auto;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>RoadSign AI</h1>
+        <p class="subtitle">DEEP LEARNING TRAFFIC SIGN CLASSIFICATION</p>
+    </header>
+
+    <main>
+        <div class="advanced-panel">
+            <div class="panel-header">
+                <p style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); letter-spacing: 1px;">ADVANCED AI
+                    FEATURES</p>
+                <span class="pro-badge">Pro Beta</span>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-toggle" onclick="toggleFeature('multiDetect')" id="featMultiDetect">
+                    <span class="toggle-label">Multi-Sign Detect</span>
+                </div>
+                <div class="feature-toggle" onclick="toggleFeature('nightVision')" id="featNightVision">
+                    <span class="toggle-label">Night Enhancement</span>
+                </div>
+                <div class="feature-toggle" onclick="toggleFeature('segmentation')" id="featSegmentation">
+                    <span class="toggle-label">Scene Parsing</span>
+                </div>
+                <div class="feature-toggle" onclick="toggleFeature('ocr')" id="featOcr">
+                    <span class="toggle-label">Plate OCR</span>
+                </div>
+                <div class="feature-toggle" onclick="toggleFeature('health')" id="featHealth">
+                    <span class="toggle-label">Sign Health</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" id="tabUpload">Upload Image</div>
+            <div class="tab" id="tabCamera">Live Camera</div>
+        </div>
+
+        <div class="settings-bar">
+            <select class="select-input" id="langSelect">
+                <option value="en">English 🇬🇧</option>
+                <option value="de">German 🇩🇪</option>
+                <option value="es">Spanish 🇪🇸</option>
+                <option value="hi">Hindi 🇮🇳</option>
+            </select>
+            <button class="icon-btn active" id="audioToggle" title="Toggle Voice Announcement">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+            </button>
+            <button class="icon-btn" id="themeToggle" title="Switch Theme">
+                <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="upload-container">
+            <!-- Upload Mode -->
+            <div id="uploadView">
+                <div class="drop-zone" id="dropZone">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p>Drag & Drop road sign image here</p>
+                    <p style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-dim);">or click to browse files
+                    </p>
+                    <input type="file" id="fileInput" hidden accept="image/*">
+                    <img id="preview" alt="Preview">
+                </div>
+                <button class="btn" id="analyzeBtn">Classify Sign</button>
+            </div>
+
+            <!-- Camera Mode -->
+            <div id="cameraView">
+                <video id="video" autoplay playsinline></video>
+                <div class="camera-controls">
+                    <button class="btn" id="captureBtn">Capture & Classify</button>
+                    <button class="btn" id="stopCameraBtn"
+                        style="background: var(--glass); box-shadow: none;">Stop</button>
+                </div>
+                <canvas id="canvas" style="display: none;"></canvas>
+            </div>
+
+            <div class="loader" id="loader"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="result-card">
+                <div style="flex: 1;">
+                    <p
+                        style="color: var(--text-dim); margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px;">
+                        Classification Result</p>
+                    <div class="prediction-label" id="predictionText">Speed Limit (30km/h)</div>
+                    <div class="confidence-bar-container">
+                        <div class="confidence-bar" id="confidenceBar"></div>
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-dim);">Confidence: <span
+                            id="confidenceText" style="color: white; font-weight: 600;">99.4%</span></p>
+                    <div class="driving-tip" id="drivingTip">Keep a safe distance.</div>
+
+                    <div id="advancedResults">
+                        <div id="healthBadge"></div>
+                        <div id="ocrBox" style="display:none;">
+                            <p
+                                style="font-size: 0.7rem; color: var(--text-dim); margin-top: 1rem; text-transform: uppercase;">
+                                Plate Text OCR</p>
+                            <div class="ocr-text" id="ocrText"></div>
+                        </div>
+                        <div class="advanced-img-container" id="advancedImgs">
+                            <!-- Segmented or Processed images here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="breakdown-container" id="predictionBreakdown">
+                <!-- Top 3 results injected here -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const DRIVING_TIPS = {
+            'Speed limit': 'Do not exceed the indicated speed. Watch for pedestrians.',
+            'Stop': 'Come to a complete halt and wait for a safe gap.',
+            'Yield': 'Slow down and let others pass. Stop if necessary.',
+            'No entry': 'Turn around immediately. Do not enter this street.',
+            'Road works': 'Slow down and watch for workers and machinery.',
+            'General caution': 'Be alert and prepared for unexpected hazards.'
+        };
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const results = document.getElementById('results');
+        const loader = document.getElementById('loader');
+        const predictionText = document.getElementById('predictionText');
+        const confidenceBar = document.getElementById('confidenceBar');
+        const confidenceText = document.getElementById('confidenceText');
+
+        // --- Advanced Features State ---
+        const activeFeatures = {
+            multiDetect: false,
+            nightVision: false,
+            segmentation: false,
+            ocr: false,
+            health: false
+        };
+
+        function toggleFeature(feat) {
+            activeFeatures[feat] = !activeFeatures[feat];
+            const el = document.getElementById('feat' + feat.charAt(0).toUpperCase() + feat.slice(1));
+            el.classList.toggle('active');
+        }
+        const tabUpload = document.getElementById('tabUpload');
+        const tabCamera = document.getElementById('tabCamera');
+        const uploadView = document.getElementById('uploadView');
+        const cameraView = document.getElementById('cameraView');
+        const video = document.getElementById('video');
+        const captureBtn = document.getElementById('captureBtn');
+        const stopCameraBtn = document.getElementById('stopCameraBtn');
+        const canvas = document.getElementById('canvas');
+
+        let stream = null;
+
+        tabUpload.addEventListener('click', () => {
+            tabUpload.classList.add('active');
+            tabCamera.classList.remove('active');
+            uploadView.style.display = 'block';
+            cameraView.style.display = 'none';
+            stopCamera();
+        });
+
+        tabCamera.addEventListener('click', async () => {
+            tabCamera.classList.add('active');
+            tabUpload.classList.remove('active');
+            uploadView.style.display = 'none';
+            cameraView.style.display = 'flex';
+            startCamera();
+        });
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error(err);
+                alert('Could not access camera. Please check permissions.');
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        stopCameraBtn.addEventListener('click', stopCamera);
+
+        captureBtn.addEventListener('click', async () => {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('file', blob, 'capture.jpg');
+                performPrediction(formData);
+            }, 'image/jpeg');
+        });
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFile);
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFile();
+            }
+        });
+
+        function handleFile() {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    dropZone.querySelector('svg').style.display = 'none';
+                    dropZone.querySelector('p').style.display = 'none';
+                    dropZone.querySelectorAll('p')[1].style.display = 'none';
+                    results.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        const audioToggle = document.getElementById('audioToggle');
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const langSelect = document.getElementById('langSelect');
+        const drivingTip = document.getElementById('drivingTip');
+        let audioEnabled = true;
+
+        // --- Theme Logic ---
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+            updateThemeIcon();
+        }
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            updateThemeIcon();
+        });
+
+        function updateThemeIcon() {
+            const isLight = document.body.classList.contains('light-theme');
+            if (isLight) {
+                themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />`;
+            } else {
+                themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />`;
+            }
+        }
+
+        audioToggle.addEventListener('click', () => {
+            audioEnabled = !audioEnabled;
+            audioToggle.classList.toggle('active');
+        });
+
+        analyzeBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select an image first.');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', file);
+            performPrediction(formData);
+        });
+
+        async function performPrediction(formData) {
+            loader.style.display = 'block';
+            analyzeBtn.style.display = 'none';
+            captureBtn.style.display = 'none';
+            results.style.display = 'none';
+
+            // Send selected language to backend
+            const lang = langSelect.value;
+            formData.append('lang', lang);
+            formData.append('features', JSON.stringify(activeFeatures));
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const translatedLabel = data.prediction;
+                    const originalLabel = data.original || data.prediction;
+                    const topPredictions = data.top_predictions;
+
+                    predictionText.textContent = translatedLabel;
+                    confidenceText.textContent = (data.confidence * 100).toFixed(1) + '%';
+                    confidenceBar.style.width = (data.confidence * 100) + '%';
+
+                    // Update Top-3 Breakdown
+                    const breakdownContainer = document.getElementById('predictionBreakdown');
+                    breakdownContainer.innerHTML = '<p style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">AI Confidence Breakdown</p>';
+
+                    topPredictions.forEach((pred, index) => {
+                        const percent = (pred.confidence * 100).toFixed(1);
+                        const item = document.createElement('div');
+                        item.className = 'breakdown-item';
+                        if (index === 0) item.style.borderColor = 'var(--primary)';
+
+                        item.innerHTML = `
+                            <div class="breakdown-header">
+                                <span class="breakdown-label">${pred.label}</span>
+                                <span class="breakdown-percent">${percent}%</span>
+                            </div>
+                            <div class="breakdown-bar-bg">
+                                <div class="breakdown-bar-fill" style="width: ${percent}%"></div>
+                            </div>
+                        `;
+                        breakdownContainer.appendChild(item);
+                    });
+
+                    // Show Driving Tip based on original English label
+                    const tipKey = Object.keys(DRIVING_TIPS).find(k => originalLabel.includes(k));
+                    drivingTip.textContent = DRIVING_TIPS[tipKey] || "Proceed with caution and follow local traffic laws.";
+
+                    results.style.display = 'block';
+
+                    // --- Render Advanced Results ---
+                    const advResults = document.getElementById('advancedResults');
+                    const healthBadge = document.getElementById('healthBadge');
+                    const ocrBox = document.getElementById('ocrBox');
+                    const ocrText = document.getElementById('ocrText');
+                    const advImgs = document.getElementById('advancedImgs');
+
+                    if (data.advanced) {
+                        advResults.style.display = 'block';
+
+                        // Health
+                        if (data.advanced.health) {
+                            healthBadge.innerHTML = `<span class="status-badge ${data.advanced.health.status === 'Healthy' ? 'status-health' : 'status-warning'}">
+                                Sign Condition: ${data.advanced.health.status} (${data.advanced.health.score}%)
+                            </span>`;
+                        } else healthBadge.innerHTML = '';
+
+                        // OCR
+                        if (data.advanced.ocr && data.advanced.ocr.length > 0) {
+                            ocrBox.style.display = 'block';
+                            ocrText.textContent = data.advanced.ocr.join(' | ');
+                        } else ocrBox.style.display = 'none';
+
+                        // Images (Segmentation / Enhancement)
+                        advImgs.innerHTML = '';
+                        if (data.advanced.segmented_img) {
+                            advImgs.innerHTML += `
+                                <div class="advanced-img-item">
+                                    <p>Scene Segmentation</p>
+                                    <img src="${data.advanced.segmented_img}" alt="Segmentation">
+                                </div>
+                            `;
+                        }
+                        if (data.advanced.enhanced_img) {
+                            advImgs.innerHTML += `
+                                <div class="advanced-img-item">
+                                    <p>Night Enhancement</p>
+                                    <img src="${data.advanced.enhanced_img}" alt="Enhanced">
+                                </div>
+                            `;
+                        }
+                    } else {
+                        advResults.style.display = 'none';
+                    }
+
+                    // Audio Announcement
+                    if (audioEnabled) {
+                        const utterance = new SpeechSynthesisUtterance(translatedLabel);
+                        const langMap = {
+                            'en': 'en-US',
+                            'de': 'de-DE',
+                            'es': 'es-ES',
+                            'hi': 'hi-IN'
+                        };
+                        utterance.lang = langMap[lang] || 'en-US';
+
+                        // Improve voice quality
+                        const voices = window.speechSynthesis.getVoices();
+                        if (voices.length > 0) {
+                            // Try to find a high-quality "premium" voice for the selected language
+                            let preferredVoice = null;
+                            const targetLang = utterance.lang.split('-')[0];
+
+                            // On Mac, 'Samantha', 'Daniel', 'Alex' are high quality
+                            const premiumNames = ['Samantha', 'Daniel', 'Alex', 'Google', 'Natasha', 'Lekha'];
+
+                            preferredVoice = voices.find(v =>
+                                v.lang.includes(targetLang) &&
+                                premiumNames.some(name => v.name.includes(name))
+                            ) || voices.find(v => v.lang.includes(targetLang));
+
+                            if (preferredVoice) {
+                                utterance.voice = preferredVoice;
+                            }
+                        }
+
+                        utterance.rate = 1.0;  // Normal speed
+                        utterance.pitch = 1.0; // Normal pitch
+
+                        window.speechSynthesis.cancel(); // Stop current speech before starting new one
+                        window.speechSynthesis.speak(utterance);
+                    }
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred during classification.');
+            } finally {
+                loader.style.display = 'none';
+                analyzeBtn.style.display = 'block';
+                captureBtn.style.display = 'block';
+            }
+        }
+
+        // Initialize voices list for better selection
+        window.speechSynthesis.getVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+        }
+    </script>
+</body>
+
+</html>

@@ -11,6 +11,7 @@ import base64
 import json
 from io import BytesIO
 from PIL import Image
+import h5py
 
 try:
     import tensorflow as tf
@@ -61,14 +62,25 @@ def get_model():
     if model is None:
         if os.path.exists(MODEL_PATH) and tf:
             try:
-                # Handle Keras version differences (batch_shape vs batch_input_shape)
-                class CustomInputLayer(tf.keras.layers.InputLayer):
-                    def __init__(self, **kwargs):
-                        if 'batch_shape' in kwargs:
-                            kwargs['batch_input_shape'] = kwargs.pop('batch_shape')
-                        super().__init__(**kwargs)
-                
-                model = load_model(MODEL_PATH, custom_objects={'InputLayer': CustomInputLayer})
+                # Need to use a custom HDF5 load because of Keras version mismatches
+                with h5py.File(MODEL_PATH, mode='r') as f:
+                    model_config = f.attrs.get('model_config')
+                    if model_config is not None:
+                        # Decode bytes to string if necessary
+                        if isinstance(model_config, bytes):
+                            model_config = model_config.decode('utf-8')
+                        model_config = json.loads(model_config)
+                        
+                        # Clean up InputLayer batch_shape vs batch_input_shape
+                        if 'config' in model_config and 'layers' in model_config['config']:
+                            for layer in model_config['config']['layers']:
+                                if layer['class_name'] == 'InputLayer':
+                                    if 'batch_shape' in layer['config']:
+                                        layer['config']['batch_input_shape'] = layer['config'].pop('batch_shape')
+                        
+                        model = tf.keras.models.model_from_json(json.dumps(model_config))
+                        # Load weights
+                        model.load_weights(MODEL_PATH)
                 print("Model loaded successfully.")
                 model_error = None
             except Exception as e:

@@ -8,25 +8,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.5);
-            --bg: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
+            --primary: #00e5ff;
+            --primary-glow: rgba(0, 229, 255, 0.5);
+            --bg: #060913;
+            --card-bg: rgba(16, 23, 42, 0.75);
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
-            --glass: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.1);
-            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --glass: rgba(255, 255, 255, 0.04);
+            --border: rgba(0, 229, 255, 0.15);
+            --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body.light-theme {
-            --bg: #f3f4f6;
+            --bg: #f4f6f8;
             --card-bg: rgba(255, 255, 255, 0.95);
-            --text-main: #111827;
-            --text-dim: #4b5563;
-            --glass: rgba(255, 255, 255, 0.6);
-            --border: rgba(0, 0, 0, 0.08);
-            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            --primary: #2563eb;
+            --primary-glow: rgba(37, 99, 235, 0.3);
+            --text-main: #0f172a;
+            --text-dim: #475569;
+            --glass: rgba(255, 255, 255, 0.8);
+            --border: rgba(37, 99, 235, 0.15);
+            --shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08), 0 8px 16px -8px rgba(0, 0, 0, 0.04);
         }
 
         * {
@@ -45,14 +47,14 @@
             overflow-x: hidden;
             transition: background-color var(--transition), color var(--transition);
             background-image:
-                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 40%);
+                radial-gradient(circle at 15% 30%, rgba(0, 229, 255, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 85% 70%, rgba(138, 43, 226, 0.06) 0%, transparent 40%);
         }
 
         body.light-theme {
             background-image:
-                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
+                radial-gradient(circle at 15% 30%, rgba(37, 99, 235, 0.04) 0%, transparent 40%),
+                radial-gradient(circle at 85% 70%, rgba(139, 92, 246, 0.04) 0%, transparent 40%);
         }
 
         header {
@@ -62,13 +64,21 @@
         }
 
         h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #818cf8, #c084fc);
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), #8a2be2);
             -webkit-background-clip: text;
             background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        body.light-theme h1 {
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         p.subtitle {
